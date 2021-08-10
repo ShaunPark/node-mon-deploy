@@ -9,6 +9,27 @@ data:
 ---
 apiVersion: v1
 data:
+  config.mem.yaml: |
+    dryRun: true
+    actionBuffer: 30000
+    ratioForPageCacheDrop: 
+      duration: 20000
+      ratio: 50
+    ratioForAllDrop: 
+      duration: 10000
+      ratio: 70
+    processInterval: 2000
+    elasticSearch: 
+      host: 3.37.79.125
+      port: 9200
+      logIndex: log
+      statusIndex: status
+      useApiKey: false
+    prometheus: 
+      url: http://10.106.209.0:8080
+    ssh:
+      sshPemFile: "/etc/ssl/certs/my.pem"
+      sshUser: "ubuntu"
   config.yaml: |
     dryRun: false
     rebootThroughSSH: true 
