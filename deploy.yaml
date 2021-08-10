@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-mon
+  namespace: monitoring
+  labels: {component: node-mon}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {component: node-mon}
+  template:
+    metadata:
+      name: node-mon
+      namespace: monitoring
+      labels: {component: node-mon}
+    spec:
+      containers:
+      - name: node-mon
+        image: coolage/node-mon:latest
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+        - name: ca-pemstore
+          mountPath: /etc/ssl/certs/my.pem
+          subPath: my.pem
+          readOnly: true
+        env:
+          - name: NODE_ENV
+            value: "development"
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: ES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: es-secret
+                key: password
+        ports:
+        - containerPort: 8880
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "128Mi"
+          limits:
+            cpu: "0.3"
+            memory: "512Mi"
+      volumes:
+      - name: config
+        configMap:
+          name: config-file-cm
+      - name: ca-pemstore
+        configMap:
+          name: ca-pemstore
+      serviceAccount: node-mon
+      nodeSelector:
+        monitor: 'true'

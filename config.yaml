@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: es-secret
+  namespace: monitoring
+type: Opaque
+data:
+  password: IXRlc3QxMjM=
+---
+apiVersion: v1
+data:
+  config.yaml: |
+    dryRun: false
+    rebootThroughSSH: true 
+    rebootDelay: 0
+    kubernetes:
+      clusterName: "sangho's cluster"
+      nodeSelector: "draino-enabled=true"
+      conditions: 
+      - CustomErrorCondition
+      - KernelDeadlock
+      - RebootRequested
+      workerPodLabelSelector: "worker=enabled"
+      #      workerPodFieldSelector: metadata.name=aaa
+    nodeManager:
+      interval: 20000
+      awsRegion: "ap-northeast-2"
+      awsVPC: "vpc-08d52a53e0cfed045"
+      sshPemFile: "/etc/ssl/certs/my.pem"
+      sshUser: "ubuntu"
+      useIpAddress: true
+    elasticSearch:
+      host: 3.37.79.125
+      port: 9200
+      logIndex: log
+      statusIndex: status
+      useApiKey: false
+    maintenance:
+      runMaintenance: true
+      testMode: true
+      maxLivenessDays: 600
+      cordonStartHour: "15:20+09:00"
+      cordonEndHour: "14:14+09:00"
+      rebootStartHour: "14:15+09:00"
+      rebootEndHour: "14:16+09:00"
+      ratio: 50
+      rebootBuffer: 15
+kind: ConfigMap
+metadata:
+  namespace: monitoring
+  name: config-file-cm
+  labels:
+    name: config-file-cm
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  namespace: monitoring
+  labels: 
+    name: node-mon
+  name: node-mon
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: monitoring
+  labels:
+    name: node-mon
+  name: node-mon
+rules:
+- apiGroups: ['']
+  resources: [nodes, events]
+  verbs: [get, list, watch, patch]
+- apiGroups: ['']
+  resources: [nodes/status]
+  verbs: [patch, update, get]
+- apiGroups: ['']
+  resources: [pods]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  namespace: monitoring
+  labels: 
+    name: node-mon
+  name: node-mon
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: node-mon }
+subjects:
+  - {kind: ServiceAccount, name: node-mon, namespace: monitoring}
+
